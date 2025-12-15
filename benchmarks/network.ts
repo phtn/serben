@@ -1,5 +1,5 @@
 import { colors, formatBytes, formatDuration } from '../utils/colors.js';
-import { progressBar, dashboardPanel, renderPanelsGrid, statusIndicator, sparkline, createTable, simpleProgressBar, stripAnsi } from '../ui/components.js';
+import { progressBar, createBox, statusIndicator, sparkline, createTable } from '../ui/components.js';
 import type { BenchmarkResult, ProgressCallback, NetworkBenchmarkOptions } from '../types/index.js';
 
 interface NetworkTestResult {
@@ -197,29 +197,21 @@ export async function runNetworkBenchmark(
   const results: NetworkTestResult[] = [];
   const totalTests = 5;
   let completedTests = 0;
-  const termWidth = process.stdout.columns || 80;
-  const panelWidth = Math.min(38, Math.floor((termWidth - 4) / 2));
 
   // Parse URL for display
   const url = new URL(target);
 
   console.log('\n');
-  
-  // Display network info as dashboard panels
-  const targetPanel = dashboardPanel('🌐 TARGET', [
-    { label: 'Host', value: url.hostname.slice(0, 20), color: 'neonCyan' },
-    { label: 'Protocol', value: url.protocol.replace(':', ''), color: 'neonGreen' },
-  ], panelWidth, 'neonCyan');
-  
-  const configPanel = dashboardPanel('⚙️  CONFIG', [
-    { label: 'Requests', value: String(requests), color: 'neonPink' },
-    { label: 'Concurrent', value: String(concurrent), color: 'neonOrange' },
-    { label: 'Timeout', value: `${timeout}ms`, color: 'neonCyan' },
-  ], panelWidth, 'neonPink');
-  
-  console.log(renderPanelsGrid([targetPanel, configPanel], 2));
+  console.log(createBox('NETWORK BENCHMARK', [
+    `${colors.muted('Target:')} ${colors.neonCyan(target)}`,
+    `${colors.muted('Host:')} ${colors.neonGreen(url.hostname)}`,
+    `${colors.muted('Requests:')} ${colors.neonPink(String(requests))}`,
+    `${colors.muted('Concurrency:')} ${colors.neonOrange(String(concurrent))}`,
+    `${colors.muted('Timeout:')} ${colors.neonCyan(String(timeout) + 'ms')}`,
+    '',
+    `${colors.dimmed('Running network performance tests...')}`,
+  ], 60, 'neonCyan'));
   console.log('\n');
-  console.log(colors.dimmed(' Running network performance tests...\n'));
 
   const latencyHistory: number[] = [];
 
@@ -313,57 +305,37 @@ export async function runNetworkBenchmark(
   const totalScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
   const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
 
-  // Display summary as dashboard
+  // Display summary
   console.log('\n');
   
-  const width = 70;
-  console.log(colors.neonCyan('╔' + '═'.repeat(width) + '╗'));
-  
-  const titleText = ' NETWORK BENCHMARK RESULTS ';
-  const titlePad = Math.floor((width - titleText.length) / 2);
-  console.log(colors.neonCyan('║') + ' '.repeat(titlePad) + colors.bright(titleText) + ' '.repeat(width - titlePad - titleText.length) + colors.neonCyan('║'));
-  
-  console.log(colors.neonCyan('╠' + '─'.repeat(width) + '╣'));
-  
-  // Score row
-  const scoreText = `Overall Score: ${colors.neonPink(totalScore.toFixed(1))}/100`;
-  const scoreLen = stripAnsi(scoreText).length;
-  console.log(colors.neonCyan('║') + ' ' + scoreText + ' '.repeat(width - scoreLen - 1) + colors.neonCyan('║'));
-  
-  // Progress bar
-  const barText = ' ' + progressBar(totalScore, 100, 50);
-  console.log(colors.neonCyan('║') + barText + ' '.repeat(Math.max(0, width - stripAnsi(barText).length)) + colors.neonCyan('║'));
-  
-  console.log(colors.neonCyan('╠' + '─'.repeat(width) + '╣'));
-  
-  // Stats row
-  const statsText = ` Target: ${colors.neonGreen(url.hostname.slice(0, 20))}  Requests: ${colors.neonPink(String(requests))}  Duration: ${colors.neonOrange(formatDuration(totalDuration))}`;
-  console.log(colors.neonCyan('║') + statsText + ' '.repeat(Math.max(0, width - stripAnsi(statsText).length)) + colors.neonCyan('║'));
-  
-  console.log(colors.neonCyan('╠' + '─'.repeat(width) + '╣'));
-  
-  // Latency stats - two columns
-  const latRow1 = ` Avg: ${colors.neonPink(latResult.avg.toFixed(1) + 'ms')}   Min: ${colors.neonGreen(latResult.min.toFixed(1) + 'ms')}   Max: ${colors.neonOrange(latResult.max.toFixed(1) + 'ms')}`;
-  console.log(colors.neonCyan('║') + latRow1 + ' '.repeat(Math.max(0, width - stripAnsi(latRow1).length)) + colors.neonCyan('║'));
-  
-  const latRow2 = ` P95: ${colors.neonCyan(latResult.p95.toFixed(1) + 'ms')}   P99: ${colors.neonPurple(latResult.p99.toFixed(1) + 'ms')}`;
-  console.log(colors.neonCyan('║') + latRow2 + ' '.repeat(Math.max(0, width - stripAnsi(latRow2).length)) + colors.neonCyan('║'));
-  
-  console.log(colors.neonCyan('╠' + '─'.repeat(width) + '╣'));
-  
-  // Header
-  const headerText = ` ${'Metric'.padEnd(18)} ${'Value'.padStart(15)} ${'Bar'.padStart(18)} ${'Score'.padStart(10)}`;
-  console.log(colors.neonCyan('║') + colors.muted(headerText) + ' '.repeat(Math.max(0, width - headerText.length)) + colors.neonCyan('║'));
-  
-  // Results
-  for (const r of results) {
-    const bar = simpleProgressBar(r.score, 100, 12);
-    const valueText = `${r.value.toFixed(1)} ${r.unit}`;
-    const rowText = ` ${colors.muted(r.name.padEnd(18))} ${colors.neonGreen(valueText.padStart(15))} ${bar} ${colors.neonCyan(r.score.toFixed(1).padStart(7))}`;
-    console.log(colors.neonCyan('║') + rowText + ' '.repeat(Math.max(0, width - stripAnsi(rowText).length)) + colors.neonCyan('║'));
-  }
-  
-  console.log(colors.neonCyan('╚' + '═'.repeat(width) + '╝'));
+  // Statistics table
+  console.log(createTable(
+    ['Metric', 'Value', 'Score'],
+    results.map(r => [r.name, `${r.value.toFixed(2)} ${r.unit}`, `${r.score.toFixed(1)}/100`]),
+    [20, 20, 15]
+  ));
+  console.log('\n');
+
+  console.log(createBox('NETWORK BENCHMARK RESULTS', [
+    '',
+    `${colors.muted('Overall Score:')} ${colors.neonPink(totalScore.toFixed(1))} ${colors.dimmed('/ 100')}`,
+    '',
+    progressBar(totalScore, 100, 50),
+    '',
+    `${colors.muted('Target:')} ${colors.neonCyan(target)}`,
+    `${colors.muted('Total Requests:')} ${colors.neonGreen(String(requests))}`,
+    `${colors.muted('Test Duration:')} ${colors.neonOrange(formatDuration(totalDuration))}`,
+    '',
+    `${colors.dimmed('─'.repeat(56))}`,
+    '',
+    `${colors.muted('Latency Stats:')}`,
+    `  ${colors.dimmed('├─')} ${colors.muted('Average:')} ${colors.neonPink(latResult.avg.toFixed(2) + ' ms')}`,
+    `  ${colors.dimmed('├─')} ${colors.muted('Min:')} ${colors.neonGreen(latResult.min.toFixed(2) + ' ms')}`,
+    `  ${colors.dimmed('├─')} ${colors.muted('Max:')} ${colors.neonOrange(latResult.max.toFixed(2) + ' ms')}`,
+    `  ${colors.dimmed('├─')} ${colors.muted('P95:')} ${colors.neonCyan(latResult.p95.toFixed(2) + ' ms')}`,
+    `  ${colors.dimmed('└─')} ${colors.muted('P99:')} ${colors.neonPurple(latResult.p99.toFixed(2) + ' ms')}`,
+    '',
+  ], 60, 'neonCyan'));
 
   return {
     name: 'Network Benchmark',
