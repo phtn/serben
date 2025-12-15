@@ -1,0 +1,41 @@
+{
+  "name": "nexus-bench",
+  "version": "1.0.0",
+  "description": "🔥 NEXUS BENCH - Cyberpunk-inspired web server benchmarking CLI",
+  "module": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "nexus": "./src/index.ts",
+    "nb": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "bench": "bun run src/index.ts bench",
+    "test": "bun --watch test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "build": "bun build src/index.ts --outdir dist --target node"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "chalk": "^5.3.0",
+    "chalk-animation": "^2.0.3",
+    "cli-spinners": "^2.9.2",
+    "commander": "^11.1.0",
+    "figlet": "^1.7.0",
+    "gradient-string": "^2.0.2",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "systeminformation": "^5.21.20",
+    "terminal-kit": "^3.0.1",
+    "boxen": "^7.1.1",
+    "cli-table3": "^0.6.3",
+    "nanospinner": "^1.1.0"
+  }
+}
